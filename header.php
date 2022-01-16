@@ -14,7 +14,7 @@
 <body>
 	<div class="container-fluid">
 		<header>
-			<h1>McSpankey's Tech Shop Emporium</h1>
+			<h1>Tech Shop Emporium</h1>
 		</header>
 		<hr>
 	</div>
