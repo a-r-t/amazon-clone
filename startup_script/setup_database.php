@@ -26,6 +26,91 @@ Database::runQuery($query);
 $query = "GRANT ALL PRIVILEGES ON shopping_db.* TO 'admin'@'localhost'";
 Database::runQuery($query);
 
+// setup users table
+$query = "CREATE TABLE shopping_db.users (
+			 id int not null AUTO_INCREMENT PRIMARY KEY,
+			 login_hash varchar(255) not null
+		 )";
+Database::runQuery($query);
+
+$login_hash_1 = '04d4142f6a79d0ac0bf86ea3d7d362d8'; // username: customer1 | password: imacustomer
+$login_hash_2 = '8f9203fc7c1a168a480cab6619db00af'; // username: admin1 | password: imanadmin
+$login_hash_3 = 'ed62e4f6557c0d0ef8f8712f17934862'; // username: customer2 | password: imacustomer2
+$query = "INSERT INTO shopping_db.users
+			(login_hash)
+          VALUES
+			(:login_hash1),
+			(:login_hash2),
+			(:login_hash3)";
+$bind_values = [
+	":login_hash1" => $login_hash_1,
+	":login_hash2" => $login_hash_2,
+	":login_hash3" => $login_hash_3
+];
+Database::runQuery($query, $bind_values=$bind_values);
+
+
+// setup roles table
+$query = "CREATE TABLE shopping_db.roles (
+			 id int not null AUTO_INCREMENT PRIMARY KEY,
+			 role varchar(255) not null
+		 )";
+Database::runQuery($query);
+
+$query = "INSERT INTO shopping_db.roles
+			(role)
+          VALUES
+			('customer'),
+			('admin')";
+Database::runQuery($query);
+
+// setup users_roles table
+$query = "CREATE TABLE shopping_db.users_roles (
+			 id int not null AUTO_INCREMENT PRIMARY KEY,
+			 user_id int not null,
+			 role_id int not null,
+			 
+			 FOREIGN KEY fk_roles_user_id(user_id)
+			 REFERENCES shopping_db.users(id)
+			 ON UPDATE CASCADE
+			 ON DELETE RESTRICT,
+			 
+			 FOREIGN KEY fk_role_id(role_id)
+			 REFERENCES shopping_db.roles(id)
+			 ON UPDATE CASCADE
+			 ON DELETE RESTRICT
+		 )";
+Database::runQuery($query);
+
+$query = "INSERT INTO shopping_db.users_roles
+			(user_id, role_id)
+          VALUES
+			(1, 1),
+			(2, 2),
+			(3, 1)";
+Database::runQuery($query);
+
+// setup admins table
+$query = "CREATE TABLE shopping_db.admins (
+			 id int not null AUTO_INCREMENT PRIMARY KEY,
+			 user_id int not null,
+			 first_name varchar(255),
+			 last_name varchar(255),
+			 email varchar(255),
+			 
+			 FOREIGN KEY fk_admins_user_id(user_id)
+			 REFERENCES shopping_db.users(id)
+			 ON UPDATE CASCADE
+			 ON DELETE RESTRICT
+		 )";
+Database::runQuery($query);
+
+$query = "INSERT INTO shopping_db.admins
+			(user_id, first_name, last_name, email)
+          VALUES
+			(2, 'Callie', 'Thimineur', 'calleus@gmail.com')";
+Database::runQuery($query);
+
 // setup products table
 $query = "CREATE TABLE shopping_db.products (
 			 id int not null AUTO_INCREMENT PRIMARY KEY,
@@ -71,7 +156,7 @@ $query = "CREATE TABLE shopping_db.carts (
 			 id int not null AUTO_INCREMENT PRIMARY KEY,
 			 customer_id int UNIQUE,
 		 
-			 FOREIGN KEY fk_customer_id(customer_id)
+			 FOREIGN KEY fk_carts_customer_id(customer_id)
 			 REFERENCES shopping_db.customers(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT
@@ -96,7 +181,7 @@ $query = "CREATE TABLE shopping_db.carts_products (
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT,
 			 
-			 FOREIGN KEY fk_product_id(product_id)
+			 FOREIGN KEY fk_cart_product_id(product_id)
 			 REFERENCES shopping_db.products(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT
@@ -115,7 +200,7 @@ $query = "CREATE TABLE shopping_db.products_store (
 			 product_id int UNIQUE,
 			 quantity int,
 		 
-			 FOREIGN KEY fk_product_id(product_id)
+			 FOREIGN KEY fk_store_product_id(product_id)
 			 REFERENCES shopping_db.products(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT
@@ -145,7 +230,7 @@ $query = "CREATE TABLE shopping_db.billing_information (
 			 card_last_four_digits varchar(4),
 			 card_hash varchar(255),
 			 
-			 FOREIGN KEY fk_customer_id(customer_id)
+			 FOREIGN KEY fk_billing_customer_id(customer_id)
 			 REFERENCES shopping_db.customers(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT
@@ -191,17 +276,17 @@ $query = "CREATE TABLE shopping_db.orders (
 			 shipping_information_id int not null,
 			 order_timestamp datetime not null, 
 			
-			 FOREIGN KEY fk_customer_id(customer_id)
+			 FOREIGN KEY fk_orders_customer_id(customer_id)
 			 REFERENCES shopping_db.customers(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT,
 
-			 FOREIGN KEY fk_billing_information_id(billing_information_id)
+			 FOREIGN KEY fk_orders_billing_information_id(billing_information_id)
 			 REFERENCES shopping_db.billing_information(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT,
 			 
-			 FOREIGN KEY fk_shipping_information_id(shipping_information_id)
+			 FOREIGN KEY fk_orders_shipping_information_id(shipping_information_id)
 			 REFERENCES shopping_db.shipping_information(id)
 			 ON UPDATE CASCADE
 			 ON DELETE RESTRICT
@@ -241,89 +326,4 @@ $query = "INSERT INTO shopping_db.orders_products
 			(2, 1, 1),
 			(2, 3, 3)";
 Database::runQuery($query);
-
-// setup roles table
-$query = "CREATE TABLE shopping_db.roles (
-			 id int not null AUTO_INCREMENT PRIMARY KEY,
-			 role varchar(255) not null
-		 )";
-Database::runQuery($query);
-
-$query = "INSERT INTO shopping_db.roles
-			(role)
-          VALUES
-			('customer'),
-			('admin')";
-Database::runQuery($query);
-
-// setup users table
-$query = "CREATE TABLE shopping_db.users (
-			 id int not null AUTO_INCREMENT PRIMARY KEY,
-			 login_hash varchar(255) not null
-		 )";
-Database::runQuery($query);
-
-$login_hash_1 = '04d4142f6a79d0ac0bf86ea3d7d362d8'; // username: customer1 | password: imacustomer
-$login_hash_2 = '8f9203fc7c1a168a480cab6619db00af'; // username: admin1 | password: imanadmin
-$login_hash_3 = 'ed62e4f6557c0d0ef8f8712f17934862'; // username: customer2 | password: imacustomer2
-$query = "INSERT INTO shopping_db.users
-			(login_hash)
-          VALUES
-			(:login_hash1),
-			(:login_hash2),
-			(:login_hash3)";
-$bind_values = [
-	":login_hash1" => $login_hash_1,
-	":login_hash2" => $login_hash_2,
-	":login_hash3" => $login_hash_3
-];
-Database::runQuery($query, $bind_values=$bind_values);
-
-// setup users_roles table
-$query = "CREATE TABLE shopping_db.users_roles (
-			 id int not null AUTO_INCREMENT PRIMARY KEY,
-			 user_id int not null,
-			 role_id int not null,
-			 
-			 FOREIGN KEY fk_user_id(user_id)
-			 REFERENCES shopping_db.users(id)
-			 ON UPDATE CASCADE
-			 ON DELETE RESTRICT,
-			 
-			 FOREIGN KEY fk_role_id(role_id)
-			 REFERENCES shopping_db.roles(id)
-			 ON UPDATE CASCADE
-			 ON DELETE RESTRICT
-		 )";
-Database::runQuery($query);
-
-$query = "INSERT INTO shopping_db.users_roles
-			(user_id, role_id)
-          VALUES
-			(1, 1),
-			(2, 2),
-			(3, 1)";
-Database::runQuery($query);
-
-// setup admins table
-$query = "CREATE TABLE shopping_db.admins (
-			 id int not null AUTO_INCREMENT PRIMARY KEY,
-			 user_id int not null,
-			 first_name varchar(255),
-			 last_name varchar(255),
-			 email varchar(255),
-			 
-			 FOREIGN KEY fk_user_id(user_id)
-			 REFERENCES shopping_db.users(id)
-			 ON UPDATE CASCADE
-			 ON DELETE RESTRICT
-		 )";
-Database::runQuery($query);
-
-$query = "INSERT INTO shopping_db.admins
-			(user_id, first_name, last_name, email)
-          VALUES
-			(2, 'Callie', 'Thimineur', 'calleus@gmail.com')";
-Database::runQuery($query);
-
 ?>
